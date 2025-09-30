@@ -4,6 +4,7 @@ import logging
 import sys
 import tempfile
 import warnings
+from numpy import isclose, all
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict
 
@@ -385,12 +386,44 @@ def _recurse(data: TikzData, obj: Artist) -> list:
     Content is returned.
     """
     content = _ContentManager()
+
     for child in obj.get_children():
         # Some patches are Spines, too; skip those entirely.
         # See <https://github.com/nschloe/tikzplotlib/issues/277>.
-        if isinstance(child, (Spine, XAxis, YAxis)):
+
+        # Filter out the Figure's background patch
+        if (
+            (isinstance(obj, Figure)
+            and isinstance(child, Patch)
+            and child is obj.patch
+            and child.get_facecolor() == (1.0, 1.0, 1.0, 1.0) # White face color
+            #and (child.get_edgecolor() is None or all(isclose(child.get_edgecolor(), (0.0, 0.0, 0.0, 0.0)))) # No edge color
+            and child.get_linewidth() == 0.0)
+            or not child.get_visible()
+        ):
+            if not (child.get_edgecolor() is None or all(isclose(child.get_edgecolor(), (0.0, 0.0, 0.0, 0.0)))):
+                print(child.get_edgecolor())
+                print(child.get_edgecolor() == (0.0, 0.0, 0.0, 0.0)) # No edge color
             continue
 
+        
+        # Filter out the Axes' background patch
+        
+        if (
+            (isinstance(obj, Axes)
+            and isinstance(child, Patch)
+            and child is obj.patch
+            and child.get_facecolor() == (1.0, 1.0, 1.0, 1.0) # White face color
+            #and (child.get_edgecolor() is None or all(isclose(child.get_edgecolor(), (0.0, 0.0, 0.0, 0.0)))) # No edge color
+            and child.get_linewidth() == 0.0)
+            or not child.get_visible()
+        ):
+            continue
+
+
+        if isinstance(child, (Spine, XAxis, YAxis)):
+            continue
+        
         if isinstance(child, Axes):
             _process_axes(data, child, content)
 
