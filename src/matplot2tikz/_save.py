@@ -401,7 +401,7 @@ def _recurse(data: TikzData, obj: Artist) -> list:
             and child.get_linewidth() == 0.0)
             or not child.get_visible()
         ):
-            if not (child.get_edgecolor() is None or all(isclose(child.get_edgecolor(), (0.0, 0.0, 0.0, 0.0)))):
+            if hasattr(child, "get_edgecolor") and not (child.get_edgecolor() is None or all(isclose(child.get_edgecolor(), (0.0, 0.0, 0.0, 0.0)))):
                 print(child.get_edgecolor())
                 print(child.get_edgecolor() == (0.0, 0.0, 0.0, 0.0)) # No edge color
             continue
