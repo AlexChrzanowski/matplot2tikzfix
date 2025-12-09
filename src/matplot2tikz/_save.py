@@ -25,7 +25,7 @@ from typing_extensions import NotRequired, Unpack
 if TYPE_CHECKING:
     from matplotlib.artist import Artist
 
-from . import _axes, _legend, _line2d, _patch, _path, _text
+from . import _axes, _legend, _line2d, _patch, _path, _text, _util
 from . import _image as img
 from . import _quadmesh as qmsh
 from .__about__ import __version__
@@ -460,11 +460,23 @@ def _process_axes(data: TikzData, obj: Axes, content: _ContentManager) -> None:
     # add extra axis options
     if data.extra_axis_parameters:
         data.current_axis_options.update(data.extra_axis_parameters)
-
+            
     data.current_mpl_axes = obj
 
     # Run through the child objects, gather the content.
     children_content = _recurse(data, obj)
+
+    fig = obj.figure
+    if obj == fig.axes[0]:
+        for other_ax in fig.axes:
+            if other_ax == obj:
+                continue
+            for child in other_ax.get_children():
+                legend_text = _util.get_legend_text(child)
+                if legend_text is not None and hasattr(child, "axes") and child.axes.get_legend() is None:
+                    plot_label = child.get_label() + "_plot"
+                    children_content.append(f"\\addlegendimage{{/pgfplots/refstyle={plot_label}}}\n")
+                    children_content.append(f"\\addlegendentry{{{legend_text}}}\n")
 
     # populate content and add axis environment if desired
     if data.add_axis_environment:
