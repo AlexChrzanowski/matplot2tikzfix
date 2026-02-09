@@ -448,8 +448,8 @@ class MyAxes:
             self.data.current_axis_options.add(y_tick_rotation_and_horizontal_alignment)
 
     def _set_tick_positions(self) -> None:
-        x_tick_position_string, x_tick_position = _get_tick_position(self.obj, "x")
-        y_tick_position_string, y_tick_position = _get_tick_position(self.obj, "y")
+        x_tick_position_string, x_tick_position, x_tick_style = _get_tick_position(self.obj, "x")
+        y_tick_position_string, y_tick_position, y_tick_style = _get_tick_position(self.obj, "y")
 
         if x_tick_position == y_tick_position and x_tick_position is not None:
             self.data.current_axis_options.add(f"tick pos={x_tick_position}")
@@ -458,6 +458,11 @@ class MyAxes:
                 self.data.current_axis_options.add(x_tick_position_string)
             if y_tick_position_string is not None:
                 self.data.current_axis_options.add(y_tick_position_string)
+
+        if x_tick_style is not None:
+            _merge_tick_style(self.data.current_axis_options, "x", ["draw=none"])
+        if y_tick_style is not None:
+            _merge_tick_style(self.data.current_axis_options, "y", ["draw=none"])
 
     def _subplot(self) -> None:
         # https://github.com/matplotlib/matplotlib/issues/7225#issuecomment-252173667
@@ -533,7 +538,34 @@ class MyAxes:
         return label_style
 
 
-def _get_tick_position(obj: Axes, x_or_y: str) -> tuple[str | None, str | None]:
+def _merge_tick_style(axis_options: set[str], x_or_y: str, entries: list[str]) -> None:
+    key = f"{x_or_y}tick style="
+    existing = None
+    for option in axis_options:
+        if option.startswith(key):
+            existing = option
+            break
+
+    parts: list[str] = []
+    if existing is not None:
+        axis_options.remove(existing)
+        start = existing.find("{")
+        end = existing.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            content = existing[start + 1 : end]
+            parts = [part.strip() for part in content.split(",") if part.strip()]
+
+    for entry in entries:
+        if entry not in parts:
+            parts.append(entry)
+
+    if parts:
+        axis_options.add(f"{x_or_y}tick style={{{', '.join(parts)}}}")
+
+
+def _get_tick_position(
+    obj: Axes, x_or_y: str
+) -> tuple[str | None, str | None, str | None]:
     major_ticks = obj.xaxis.majorTicks if x_or_y == "x" else obj.yaxis.majorTicks
 
     major_ticks_bottom = [tick.tick1line.get_visible() for tick in major_ticks]
@@ -549,8 +581,16 @@ def _get_tick_position(obj: Axes, x_or_y: str) -> tuple[str | None, str | None]:
 
     position_string = None
     major_ticks_position = None
+    tick_style = None
     if not major_ticks_bottom_show_all and not major_ticks_top_show_all:
-        position_string = f"{x_or_y}majorticks=false"
+        major_tick_labels = (
+            obj.xaxis.get_majorticklabels() if x_or_y == "x" else obj.yaxis.get_majorticklabels()
+        )
+        has_visible_labels = any(label.get_visible() for label in major_tick_labels)
+        if has_visible_labels:
+            tick_style = f"{x_or_y}tick style={{draw=none}}"
+        else:
+            position_string = f"{x_or_y}majorticks=false"
     elif major_ticks_bottom_show_all and major_ticks_top_show_all:
         major_ticks_position = "both"
     elif major_ticks_bottom_show_all:
@@ -561,7 +601,7 @@ def _get_tick_position(obj: Axes, x_or_y: str) -> tuple[str | None, str | None]:
     if major_ticks_position:
         position_string = f"{x_or_y}tick pos={major_ticks_position}"
 
-    return position_string, major_ticks_position
+    return position_string, major_ticks_position, tick_style
 
 
 def _get_ticks(data: TikzData, xy: str, ticks: list | np.ndarray, ticklabels: list) -> list[str]:
