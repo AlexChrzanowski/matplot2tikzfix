@@ -159,6 +159,27 @@ def _draw_rectangle(data: TikzData, obj: Rectangle, draw_options: list) -> list[
         if len(labels_found) == 1:
             label = labels_found[0]
 
+        # Fallback fix for when labels are passed directly to ax.legend()
+        # In this case, look up the label from the Legend object by matching through containers.
+        if label == "_nolegend_" and not labels_found:
+            legend = obj.axes.get_legend()
+            if legend is not None:
+                obj_fc = obj.get_facecolor()
+                for container in obj.axes.containers:
+                    if obj in container:
+                        # Match container's facecolor to legend proxy handles
+                        if container.patches:
+                            ref_fc = container.patches[0].get_facecolor()
+                            for lh, lt in zip(
+                                legend.legend_handles, legend.get_texts()
+                            ):
+                                if hasattr(lh, "get_facecolor") and (
+                                    lh.get_facecolor() == ref_fc
+                                ):
+                                    label = lt.get_text()
+                                    break
+                        break
+
     left_lower_x = obj.get_x()
     left_lower_y = obj.get_y()
 
