@@ -1,0 +1,26 @@
+{
+  "test_id": "test_0002",
+  "failure_id": "failure_0002",
+  "timestamp": "2026-04-28T14:18:40.828338+00:00",
+  "status": "visual_mismatch",
+  "model": "claude-opus-4-5",
+  "provider": "anthropic",
+  "transpiler": "makintikz",
+  "seed": null,
+  "prompt": "",
+  "script_path": "C:\\Users\\sayya\\Desktop\\matplot2tikzfix\\agentic_tikz_tester\\runs\\smoke\\test_0002\\plot_script.py",
+  "rms": 67.33193969726562,
+  "ssim": 0.6539099373288634,
+  "max_diff": 255.0,
+  "size_mismatch": true,
+  "threshold_rms": 8.0,
+  "threshold_ssim": 0.985,
+  "exception_type": "",
+  "traceback": "",
+  "features_claimed_by_agent": [
+    "bar",
+    "categorical_ticks",
+    "rotated_labels",
+    "grid"
+  ]
+}

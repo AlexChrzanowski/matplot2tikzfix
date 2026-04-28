@@ -1,0 +1,40 @@
+\begin{tikzpicture}
+
+\definecolor{darkgray176}{RGB}{176,176,176}
+
+\begin{axis}[
+colorbar,
+colorbar style={ylabel={Amplitude}},
+colormap={mymap}{[1pt]
+  rgb(0pt)=(0.0196078431372549,0.188235294117647,0.380392156862745);
+  rgb(1pt)=(0.129411764705882,0.4,0.674509803921569);
+  rgb(2pt)=(0.262745098039216,0.576470588235294,0.764705882352941);
+  rgb(3pt)=(0.572549019607843,0.772549019607843,0.870588235294118);
+  rgb(4pt)=(0.819607843137255,0.898039215686275,0.941176470588235);
+  rgb(5pt)=(0.968627450980392,0.968627450980392,0.968627450980392);
+  rgb(6pt)=(0.992156862745098,0.858823529411765,0.780392156862745);
+  rgb(7pt)=(0.956862745098039,0.647058823529412,0.509803921568627);
+  rgb(8pt)=(0.83921568627451,0.376470588235294,0.301960784313725);
+  rgb(9pt)=(0.698039215686274,0.0941176470588235,0.168627450980392);
+  rgb(10pt)=(0.403921568627451,0,0.12156862745098)
+},
+height=4.8in,
+point meta max=1.28067916320519,
+point meta min=-1.20061487076723,
+tick align=outside,
+tick pos=left,
+title={\(\displaystyle \sin(x)\cos(y)\) with noise},
+width=6.4in,
+x grid style={darkgray176},
+xlabel={x},
+xmin=-3, xmax=3,
+xtick style={color=black},
+y grid style={darkgray176},
+ylabel={y},
+ymin=-3, ymax=3,
+ytick style={color=black}
+]
+\addplot graphics [includegraphics cmd=\pgfimage,xmin=-3, xmax=3, ymin=-3, ymax=3] {tmp-000.png};
+\end{axis}
+
+\end{tikzpicture}

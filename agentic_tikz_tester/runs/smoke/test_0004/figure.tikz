@@ -1,0 +1,95 @@
+\begin{tikzpicture}
+
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{darkred}{RGB}{139,0,0}
+\definecolor{lightgray204}{RGB}{204,204,204}
+
+\begin{axis}[
+height=4.8in,
+legend cell align={left},
+legend style={
+  fill opacity=0.8,
+  draw opacity=1,
+  text opacity=1,
+  at={(0.03,0.97)},
+  anchor=north west,
+  draw=lightgray204
+},
+log basis x={2},
+log basis y={10},
+tick align=outside,
+tick pos=left,
+title={Scaling experiment},
+width=6.4in,
+x grid style={darkgray176},
+xlabel={n (log\(\displaystyle \_2\) scale)},
+xmajorgrids,
+xmin=0.840896415253715, xmax=38.0546276800871,
+xminorgrids,
+xmode=log,
+xtick style={color=black},
+y grid style={darkgray176},
+ylabel={Time (log scale)},
+ymajorgrids,
+ymin=2.27231624318241, ymax=114.467049074804,
+yminorgrids,
+ymode=log,
+ytick style={color=black}
+]
+\path [draw=red, semithick]
+(axis cs:1,2.71545138937213)
+--(axis cs:1,4.07317708405819);
+
+\path [draw=red, semithick]
+(axis cs:2,4.1746039402048)
+--(axis cs:2,6.26190591030719);
+
+\path [draw=red, semithick]
+(axis cs:4,8.0385989872288)
+--(axis cs:4,12.0578984808432);
+
+\path [draw=red, semithick]
+(axis cs:8,15.2546029186542)
+--(axis cs:8,22.8819043779813);
+
+\path [draw=red, semithick]
+(axis cs:16,31.8890447189942)
+--(axis cs:16,47.8335670784914);
+
+\path [draw=red, semithick]
+(axis cs:32,63.8580964082924)
+--(axis cs:32,95.7871446124386);
+
+\addplot [semithick, darkred, mark=-, mark size=5, mark options={solid,draw=red}, only marks]
+table {%
+1 2.71545138937213
+2 4.1746039402048
+4 8.0385989872288
+8 15.2546029186542
+16 31.8890447189942
+32 63.8580964082924
+};
+\addlegendentry{measurements}
+\addplot [semithick, darkred, mark=-, mark size=5, mark options={solid,draw=red}, only marks]
+table {%
+1 4.07317708405819
+2 6.26190591030719
+4 12.0578984808432
+8 22.8819043779813
+16 47.8335670784914
+32 95.7871446124386
+};
+\addlegendentry{measurements}
+\addplot [semithick, darkred, mark=*, mark size=3, mark options={solid}]
+table {%
+1 3.39431423671516
+2 5.21825492525599
+4 10.048248734036
+8 19.0682536483178
+16 39.8613058987428
+32 79.8226205103655
+};
+\addlegendentry{measurements}
+\end{axis}
+
+\end{tikzpicture}
