@@ -1,0 +1,29 @@
+{
+  "test_id": "test_0001",
+  "failure_id": null,
+  "timestamp": "2026-04-28T14:51:55.884406+00:00",
+  "status": "complete",
+  "model": "claude-haiku-4-5-20251001",
+  "provider": "anthropic",
+  "transpiler": "makintikz",
+  "seed": null,
+  "prompt": "",
+  "script_path": "C:\\Users\\sayya\\Desktop\\matplot2tikzfix\\agentic_tikz_tester\\runs\\demo\\test_0001\\plot_script.py",
+  "rms": 46.07896423339844,
+  "ssim": 0.7662051341442088,
+  "edge_ssim": 0.797642256198512,
+  "max_diff": 255.0,
+  "size_mismatch": true,
+  "flagged": true,
+  "flag_rms": 20.0,
+  "flag_ssim": 0.85,
+  "flag_edge_ssim": 0.5,
+  "exception_type": "",
+  "traceback": "",
+  "features_claimed_by_agent": [
+    "bar chart with categorical x-axis",
+    "rotated tick labels",
+    "value labels on bars",
+    "grid on y-axis"
+  ]
+}

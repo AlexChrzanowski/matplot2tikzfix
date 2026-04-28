@@ -1,0 +1,66 @@
+\begin{tikzpicture}
+
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{lightblue152216200}{RGB}{152,216,200}
+\definecolor{lightsalmon}{RGB}{255,160,122}
+\definecolor{mediumturquoise69183209}{RGB}{69,183,209}
+\definecolor{mediumturquoise78205196}{RGB}{78,205,196}
+\definecolor{salmon255107107}{RGB}{255,107,107}
+
+\begin{axis}[
+height=5in,
+tick align=outside,
+tick pos=left,
+title={Bar Chart with Rotated Labels},
+width=8in,
+x grid style={darkgray176},
+xlabel={Category},
+xmin=-0.64, xmax=4.64,
+xtick style={color=black},
+xtick={0,1,2,3,4},
+xticklabel style={rotate=45.0,anchor=east},
+xticklabels={Alpha,Beta,Gamma,Delta,Epsilon},
+y grid style={darkgray176},
+ylabel={Value},
+ymajorgrids,
+ymin=0, ymax=89.7,
+ytick style={color=black}
+]
+\draw[draw=black,fill=salmon255107107,semithick] (axis cs:-0.4,0) rectangle (axis cs:0.4,23);
+\draw[draw=black,fill=mediumturquoise78205196,semithick] (axis cs:0.6,0) rectangle (axis cs:1.4,45);
+\draw[draw=black,fill=mediumturquoise69183209,semithick] (axis cs:1.6,0) rectangle (axis cs:2.4,56);
+\draw[draw=black,fill=lightsalmon,semithick] (axis cs:2.6,0) rectangle (axis cs:3.4,78);
+\draw[draw=black,fill=lightblue152216200,semithick] (axis cs:3.6,0) rectangle (axis cs:4.4,32);
+\draw (axis cs:0,23) node[
+  scale=0.5,
+  anchor=south,
+  text=black,
+  rotate=0.0
+]{\bfseries 23};
+\draw (axis cs:1,45) node[
+  scale=0.5,
+  anchor=south,
+  text=black,
+  rotate=0.0
+]{\bfseries 45};
+\draw (axis cs:2,56) node[
+  scale=0.5,
+  anchor=south,
+  text=black,
+  rotate=0.0
+]{\bfseries 56};
+\draw (axis cs:3,78) node[
+  scale=0.5,
+  anchor=south,
+  text=black,
+  rotate=0.0
+]{\bfseries 78};
+\draw (axis cs:4,32) node[
+  scale=0.5,
+  anchor=south,
+  text=black,
+  rotate=0.0
+]{\bfseries 32};
+\end{axis}
+
+\end{tikzpicture}

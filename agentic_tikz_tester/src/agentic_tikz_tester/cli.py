@@ -1,5 +1,5 @@
-"""
-cli.py — Click-based command-line interface for agentic_tikz_tester.
+﻿"""
+cli.py â€” Click-based command-line interface for agentic_tikz_tester.
 
 Usage:
     python -m agentic_tikz_tester run --n 10 --out runs/demo
@@ -7,14 +7,15 @@ Usage:
 """
 from __future__ import annotations
 
-import sys
+import csv
+import json
 from pathlib import Path
 
 import click
 
 from .config import Config
 from .example_suite import GeneratedScript, get_examples
-from .report import save_passing_report, save_report
+from .report import save_error_report, save_test_result
 from .runner import TestResult, TestStatus, run_test
 
 
@@ -34,18 +35,20 @@ def main() -> None:
 @main.command()
 @click.option("--n", "n", default=10, show_default=True, help="Number of test cases to run.")
 @click.option("--out", "out", default="runs/output", show_default=True, help="Output directory.")
-@click.option("--failures-dir", "failures_dir", default="failures", show_default=True, help="Directory for failure reports.")
-@click.option("--model", "model", default="claude-3-5-haiku-20241022", show_default=True, help="LLM model name.")
+@click.option("--failures-dir", "failures_dir", default="failures", show_default=True,
+              help="Directory for pipeline-error reports.")
+@click.option("--model", "model", default="claude-haiku-4-5-20251001", show_default=True,
+              help="LLM model name.")
 @click.option("--provider", "provider", default="anthropic", show_default=True,
               type=click.Choice(["anthropic", "openai"]), help="LLM provider.")
-@click.option("--threshold-rms", "threshold_rms", default=8.0, show_default=True,
-              help="RMS pixel difference failure threshold.")
-@click.option("--threshold-ssim", "threshold_ssim", default=0.985, show_default=True,
-              help="SSIM failure threshold (lower = more tolerant).")
+@click.option("--flag-rms", "flag_rms", default=20.0, show_default=True,
+              help="Flag tests with trimmed-image RMS above this value.")
+@click.option("--flag-ssim", "flag_ssim", default=0.85, show_default=True,
+              help="Flag tests with trimmed-image SSIM below this value.")
+@click.option("--flag-edge-ssim", "flag_edge_ssim", default=0.50, show_default=True,
+              help="Flag tests with edge-structure SSIM below this value.")
 @click.option("--timeout", "timeout", default=30, show_default=True,
               help="Timeout per pipeline stage in seconds.")
-@click.option("--keep-passing", "keep_passing", is_flag=True, default=False,
-              help="Keep artifacts for passing tests.")
 @click.option("--transpiler", "transpiler", default="makintikz", show_default=True,
               type=click.Choice(["makintikz", "tikzplotlib"]),
               help="Transpiler backend.")
@@ -58,10 +61,10 @@ def run(
     failures_dir: str,
     model: str,
     provider: str,
-    threshold_rms: float,
-    threshold_ssim: float,
+    flag_rms: float,
+    flag_ssim: float,
+    flag_edge_ssim: float,
     timeout: int,
-    keep_passing: bool,
     transpiler: str,
     seed: int | None,
     no_llm: bool,
@@ -72,10 +75,10 @@ def run(
         n=n,
         out=out,
         model=model,
-        threshold_rms=threshold_rms,
-        threshold_ssim=threshold_ssim,
+        flag_rms=flag_rms,
+        flag_ssim=flag_ssim,
+        flag_edge_ssim=flag_edge_ssim,
         timeout=timeout,
-        keep_passing=keep_passing,
         transpiler=transpiler,
         seed=seed,
         provider=provider,
@@ -94,8 +97,9 @@ def run(
         "provider": provider,
         "transpiler": transpiler,
         "seed": seed,
-        "threshold_rms": threshold_rms,
-        "threshold_ssim": threshold_ssim,
+        "flag_rms": flag_rms,
+        "flag_ssim": flag_ssim,
+        "flag_edge_ssim": flag_edge_ssim,
     }
 
     # ------------------------------------------------------------------
@@ -115,9 +119,16 @@ def run(
         effective_n = n
 
     # ------------------------------------------------------------------
-    # Counters
+    # Counters / result accumulator
     # ------------------------------------------------------------------
-    totals: dict[str, int] = {s.value: 0 for s in TestStatus}
+    all_results: list[TestResult] = []
+    error_count: dict[str, int] = {
+        TestStatus.GENERATION_ERROR.value: 0,
+        TestStatus.SCRIPT_ERROR.value: 0,
+        TestStatus.TRANSPILE_ERROR.value: 0,
+        TestStatus.LATEX_ERROR.value: 0,
+        TestStatus.RENDER_ERROR.value: 0,
+    }
     failure_index = _next_failure_index(fail_path)
 
     # ------------------------------------------------------------------
@@ -131,7 +142,8 @@ def run(
 
         script = script_source.get(i)
         if script is None:
-            click.echo(f"\r[{i}/{effective_n}] GENERATION_ERROR                    ")
+            click.echo(f"\r[{i}/{effective_n}] GENERATION_ERROR                         ")
+            test_dir.mkdir(parents=True, exist_ok=True)
             result = TestResult(
                 test_id=test_id,
                 status=TestStatus.GENERATION_ERROR,
@@ -139,42 +151,41 @@ def run(
                 traceback="LLM failed to return valid JSON after 2 attempts.",
                 test_dir=test_dir,
             )
-            totals[TestStatus.GENERATION_ERROR.value] += 1
-            failure_dir = save_report(
+            all_results.append(result)
+            error_count[TestStatus.GENERATION_ERROR.value] += 1
+            err_dir = save_error_report(
                 result, test_dir, fail_path, failure_index, config_meta
             )
             failure_index += 1
-            click.echo(f"  -> {failure_dir}")
+            click.echo(f"  -> {err_dir}")
             continue
 
         click.echo(f"\r[{i}/{effective_n}] generated ({', '.join(script.features[:3])})")
 
         result = run_test(test_id, test_dir, script, config)
-        totals[result.status.value] += 1
+        all_results.append(result)
 
         _print_result_line(i, effective_n, result)
 
-        if result.status != TestStatus.PASS:
-            failure_dir = save_report(
-                result,
-                test_dir,
-                fail_path,
-                failure_index,
-                config_meta,
+        if result.status == TestStatus.COMPLETE:
+            save_test_result(result, test_dir, config_meta)
+        else:
+            error_count[result.status.value] = error_count.get(result.status.value, 0) + 1
+            err_dir = save_error_report(
+                result, test_dir, fail_path, failure_index, config_meta
             )
             failure_index += 1
-            click.echo(f"  -> {failure_dir}")
-        elif keep_passing:
-            save_passing_report(result, test_dir, config_meta)
-        else:
-            # Clean up test dir for passing tests to save disk space
-            # (keep plot_script.py for reference)
-            pass  # TODO: optional cleanup of passing artifacts
+            click.echo(f"  -> {err_dir}")
 
     # ------------------------------------------------------------------
-    # Summary
+    # Write summary files
     # ------------------------------------------------------------------
-    _print_summary(totals, effective_n, fail_path)
+    _write_summary(out_path, all_results)
+
+    # ------------------------------------------------------------------
+    # Print summary table
+    # ------------------------------------------------------------------
+    _print_summary(all_results, effective_n, error_count, fail_path)
 
 
 # ---------------------------------------------------------------------------
@@ -212,48 +223,93 @@ class _LLMSource:
 
 def _print_result_line(i: int, n: int, result: TestResult) -> None:
     prefix = f"[{i}/{n}]"
-    status = result.status.value.upper()
 
-    if result.rms is not None and result.ssim is not None:
-        metrics = f"RMS={result.rms:.2f}, SSIM={result.ssim:.4f}"
+    if result.status == TestStatus.COMPLETE:
+        rms_s = f"RMS={result.rms:6.2f}" if result.rms is not None else "RMS=N/A"
+        ssim_s = f"SSIM={result.ssim:.4f}" if result.ssim is not None else "SSIM=N/A"
+        ess_s = f"edge={result.edge_ssim:.4f}" if result.edge_ssim is not None else "edge=N/A"
+        flag_s = "  [FLAGGED]" if result.flagged else ""
+        click.echo(f"{prefix} {rms_s}  {ssim_s}  {ess_s}{flag_s}")
     else:
-        metrics = ""
-
-    if result.status == TestStatus.PASS:
-        verdict = "PASS"
-        line = f"{prefix} {metrics}  {verdict}"
-    else:
-        verdict = "FAIL"
-        detail = result.exception_type or status
-        if metrics:
-            line = f"{prefix} {metrics}  {verdict} ({detail})"
-        else:
-            line = f"{prefix} {verdict} ({detail})"
-
-    click.echo(line)
+        detail = result.exception_type or result.status.value.upper()
+        click.echo(f"{prefix} ERROR ({detail})")
 
 
-def _print_summary(totals: dict[str, int], n: int, fail_path: Path) -> None:
-    passes = totals.get(TestStatus.PASS.value, 0)
-    click.echo("\n" + "=" * 50)
-    click.echo(f"Results: {passes}/{n} passed")
-    click.echo(f"  visual_mismatch : {totals.get(TestStatus.VISUAL_MISMATCH.value, 0)}")
-    click.echo(f"  generation_error: {totals.get(TestStatus.GENERATION_ERROR.value, 0)}")
-    click.echo(f"  script_error    : {totals.get(TestStatus.SCRIPT_ERROR.value, 0)}")
-    click.echo(f"  transpile_error : {totals.get(TestStatus.TRANSPILE_ERROR.value, 0)}")
-    click.echo(f"  latex_error     : {totals.get(TestStatus.LATEX_ERROR.value, 0)}")
-    click.echo(f"  render_error    : {totals.get(TestStatus.RENDER_ERROR.value, 0)}")
-    total_failures = n - passes
-    if total_failures > 0:
-        click.echo(f"\nFailure reports saved to: {fail_path.resolve()}")
-    click.echo("=" * 50)
+def _print_summary(
+    results: list[TestResult],
+    n: int,
+    error_count: dict[str, int],
+    fail_path: Path,
+) -> None:
+    complete = [r for r in results if r.status == TestStatus.COMPLETE]
+    flagged = [r for r in complete if r.flagged]
+    errors = [r for r in results if r.status != TestStatus.COMPLETE]
 
+    click.echo("\n" + "=" * 65)
+    click.echo(f"Results: {len(complete)}/{n} completed  |  {len(flagged)} flagged  |  {len(errors)} errors")
+
+    if complete:
+        click.echo("\nCompleted tests (sorted by RMS desc):")
+        for r in sorted(complete, key=lambda x: x.rms or 0, reverse=True):
+            rms_s = f"{r.rms:6.2f}" if r.rms is not None else "  N/A"
+            ssim_s = f"{r.ssim:.4f}" if r.ssim is not None else "  N/A"
+            ess_s = f"{r.edge_ssim:.4f}" if r.edge_ssim is not None else "  N/A"
+            flag_s = " [F]" if r.flagged else "    "
+            click.echo(f"  {r.test_id}  RMS={rms_s}  SSIM={ssim_s}  edge={ess_s}{flag_s}")
+
+    if errors:
+        click.echo("\nPipeline errors:")
+        for s, c in error_count.items():
+            if c:
+                click.echo(f"  {s:<22}: {c}")
+        click.echo(f"  Error reports saved to: {fail_path}")
+
+    click.echo("=" * 65)
+
+
+# ---------------------------------------------------------------------------
+# Summary file writers
+# ---------------------------------------------------------------------------
+
+def _write_summary(out_path: Path, results: list[TestResult]) -> None:
+    rows = []
+    for r in results:
+        rows.append({
+            "test_id": r.test_id,
+            "status": r.status.value,
+            "rms": r.rms,
+            "ssim": r.ssim,
+            "edge_ssim": r.edge_ssim,
+            "max_diff": r.max_diff,
+            "size_mismatch": r.size_mismatch,
+            "flagged": r.flagged,
+            "features": ";".join(r.features),
+        })
+
+    # JSON
+    (out_path / "summary.json").write_text(
+        json.dumps(rows, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    # CSV
+    if rows:
+        csv_path = out_path / "summary.csv"
+        with csv_path.open("w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+            writer.writeheader()
+            writer.writerows(rows)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 def _next_failure_index(fail_path: Path) -> int:
-    """Find the next available failure_XXXX index."""
     existing = [
         int(d.name.split("_")[1])
         for d in fail_path.iterdir()
         if d.is_dir() and d.name.startswith("failure_") and d.name.split("_")[1].isdigit()
     ] if fail_path.exists() else []
     return max(existing, default=0) + 1
+

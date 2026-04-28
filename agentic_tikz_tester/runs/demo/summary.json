@@ -1,0 +1,112 @@
+[
+  {
+    "test_id": "test_0001",
+    "status": "complete",
+    "rms": 46.07896423339844,
+    "ssim": 0.7662051341442088,
+    "edge_ssim": 0.797642256198512,
+    "max_diff": 255.0,
+    "size_mismatch": true,
+    "flagged": true,
+    "features": "bar chart with categorical x-axis;rotated tick labels;value labels on bars;grid on y-axis"
+  },
+  {
+    "test_id": "test_0002",
+    "status": "complete",
+    "rms": 43.81515121459961,
+    "ssim": 0.7690529574911297,
+    "edge_ssim": 0.8199261390585284,
+    "max_diff": 255.0,
+    "size_mismatch": true,
+    "flagged": true,
+    "features": "bar chart;rotated categorical ticks;value labels on bars;custom colors"
+  },
+  {
+    "test_id": "test_0003",
+    "status": "complete",
+    "rms": 36.68782043457031,
+    "ssim": 0.81803620221136,
+    "edge_ssim": 0.8375648820635606,
+    "max_diff": 255.0,
+    "size_mismatch": true,
+    "flagged": true,
+    "features": "bar chart;rotated categorical ticks;value labels on bars;grid;mathtext in title"
+  },
+  {
+    "test_id": "test_0004",
+    "status": "complete",
+    "rms": 43.532371520996094,
+    "ssim": 0.7631373974128621,
+    "edge_ssim": 0.7960752528694975,
+    "max_diff": 255.0,
+    "size_mismatch": true,
+    "flagged": true,
+    "features": "bar chart with categorical x-axis;rotated tick labels;value labels on bars;custom colors;grid on y-axis"
+  },
+  {
+    "test_id": "test_0005",
+    "status": "complete",
+    "rms": 47.39206314086914,
+    "ssim": 0.7605199713292295,
+    "edge_ssim": 0.7833551539009845,
+    "max_diff": 255.0,
+    "size_mismatch": true,
+    "flagged": true,
+    "features": "bar chart;rotated categorical tick labels;value labels on bars;custom colors;tight layout"
+  },
+  {
+    "test_id": "test_0006",
+    "status": "complete",
+    "rms": 47.91257858276367,
+    "ssim": 0.6270049057166925,
+    "edge_ssim": 0.6481908731161672,
+    "max_diff": 255.0,
+    "size_mismatch": true,
+    "flagged": true,
+    "features": "scatter plot with alpha transparency;colorbar with custom colormap;custom axis limits;grid enabled"
+  },
+  {
+    "test_id": "test_0007",
+    "status": "complete",
+    "rms": 52.13624572753906,
+    "ssim": 0.5468704767277434,
+    "edge_ssim": 0.5912473799480767,
+    "max_diff": 255.0,
+    "size_mismatch": true,
+    "flagged": true,
+    "features": "scatter plot with alpha transparency;colorbar with custom colormap;axis limits and labels;grid enabled"
+  },
+  {
+    "test_id": "test_0008",
+    "status": "complete",
+    "rms": 34.40614318847656,
+    "ssim": 0.8443994699901639,
+    "edge_ssim": 0.8532563331103316,
+    "max_diff": 255.0,
+    "size_mismatch": true,
+    "flagged": true,
+    "features": "bar chart;rotated categorical tick labels;value labels on bars;grid;mathtext in title"
+  },
+  {
+    "test_id": "test_0009",
+    "status": "complete",
+    "rms": 45.07462692260742,
+    "ssim": 0.6138149275791597,
+    "edge_ssim": 0.5481571102830242,
+    "max_diff": 255.0,
+    "size_mismatch": true,
+    "flagged": true,
+    "features": "scatter plot with alpha transparency;colorbar;custom axis limits;grid;mathtext labels"
+  },
+  {
+    "test_id": "test_0010",
+    "status": "complete",
+    "rms": 39.40436935424805,
+    "ssim": 0.7600253004520646,
+    "edge_ssim": 0.8072955489828463,
+    "max_diff": 255.0,
+    "size_mismatch": true,
+    "flagged": true,
+    "features": "bar chart with rotated categorical ticks;value labels on bars;grid;mathtext in title"
+  }
+]

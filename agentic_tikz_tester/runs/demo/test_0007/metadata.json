@@ -1,0 +1,29 @@
+{
+  "test_id": "test_0007",
+  "failure_id": null,
+  "timestamp": "2026-04-28T14:52:30.292036+00:00",
+  "status": "complete",
+  "model": "claude-haiku-4-5-20251001",
+  "provider": "anthropic",
+  "transpiler": "makintikz",
+  "seed": null,
+  "prompt": "",
+  "script_path": "C:\\Users\\sayya\\Desktop\\matplot2tikzfix\\agentic_tikz_tester\\runs\\demo\\test_0007\\plot_script.py",
+  "rms": 52.13624572753906,
+  "ssim": 0.5468704767277434,
+  "edge_ssim": 0.5912473799480767,
+  "max_diff": 255.0,
+  "size_mismatch": true,
+  "flagged": true,
+  "flag_rms": 20.0,
+  "flag_ssim": 0.85,
+  "flag_edge_ssim": 0.5,
+  "exception_type": "",
+  "traceback": "",
+  "features_claimed_by_agent": [
+    "scatter plot with alpha transparency",
+    "colorbar with custom colormap",
+    "axis limits and labels",
+    "grid enabled"
+  ]
+}

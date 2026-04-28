@@ -1,0 +1,11 @@
+test_id,status,rms,ssim,edge_ssim,max_diff,size_mismatch,flagged,features
+test_0001,complete,46.07896423339844,0.7662051341442088,0.797642256198512,255.0,True,True,bar chart with categorical x-axis;rotated tick labels;value labels on bars;grid on y-axis
+test_0002,complete,43.81515121459961,0.7690529574911297,0.8199261390585284,255.0,True,True,bar chart;rotated categorical ticks;value labels on bars;custom colors
+test_0003,complete,36.68782043457031,0.81803620221136,0.8375648820635606,255.0,True,True,bar chart;rotated categorical ticks;value labels on bars;grid;mathtext in title
+test_0004,complete,43.532371520996094,0.7631373974128621,0.7960752528694975,255.0,True,True,bar chart with categorical x-axis;rotated tick labels;value labels on bars;custom colors;grid on y-axis
+test_0005,complete,47.39206314086914,0.7605199713292295,0.7833551539009845,255.0,True,True,bar chart;rotated categorical tick labels;value labels on bars;custom colors;tight layout
+test_0006,complete,47.91257858276367,0.6270049057166925,0.6481908731161672,255.0,True,True,scatter plot with alpha transparency;colorbar with custom colormap;custom axis limits;grid enabled
+test_0007,complete,52.13624572753906,0.5468704767277434,0.5912473799480767,255.0,True,True,scatter plot with alpha transparency;colorbar with custom colormap;axis limits and labels;grid enabled
+test_0008,complete,34.40614318847656,0.8443994699901639,0.8532563331103316,255.0,True,True,bar chart;rotated categorical tick labels;value labels on bars;grid;mathtext in title
+test_0009,complete,45.07462692260742,0.6138149275791597,0.5481571102830242,255.0,True,True,scatter plot with alpha transparency;colorbar;custom axis limits;grid;mathtext labels
+test_0010,complete,39.40436935424805,0.7600253004520646,0.8072955489828463,255.0,True,True,bar chart with rotated categorical ticks;value labels on bars;grid;mathtext in title

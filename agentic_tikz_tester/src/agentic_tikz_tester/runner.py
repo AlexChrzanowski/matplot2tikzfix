@@ -1,14 +1,19 @@
-"""
-runner.py — orchestrates the full pipeline for a single test case.
+﻿"""
+runner.py â€” orchestrates the full pipeline for a single test case.
 
 Pipeline stages:
   1. Save generated script to plot_script.py
-  2. Execute script as subprocess → reference.png
-  3. Transpile → figure.tikz
+  2. Execute script as subprocess â†’ reference.png
+  3. Transpile â†’ figure.tikz
   4. Create wrapper.tex
-  5. Compile wrapper.tex → wrapper.pdf
-  6. Rasterize wrapper.pdf → tikz_rendered.png
-  7. Compare reference.png vs tikz_rendered.png
+  5. Compile wrapper.tex â†’ wrapper.pdf
+  6. Rasterize wrapper.pdf â†’ tikz_rendered.png
+  7. Compare reference.png vs tikz_rendered.png â†’ metrics (no pass/fail)
+
+TestStatus.COMPLETE means all 7 stages succeeded and metrics were recorded.
+Error statuses (SCRIPT_ERROR, TRANSPILE_ERROR, etc.) mean a stage crashed.
+There is no PASS or VISUAL_MISMATCH â€” visual grading is done by the caller
+using configurable flag thresholds in Config.
 """
 from __future__ import annotations
 
@@ -27,8 +32,7 @@ from .transpiler import transpile
 
 
 class TestStatus(str, Enum):
-    PASS = "pass"
-    VISUAL_MISMATCH = "visual_mismatch"
+    COMPLETE = "complete"           # All 7 stages succeeded; metrics recorded
     GENERATION_ERROR = "generation_error"
     SCRIPT_ERROR = "script_error"
     TRANSPILE_ERROR = "transpile_error"
@@ -42,8 +46,10 @@ class TestResult:
     status: TestStatus
     rms: float | None = None
     ssim: float | None = None
+    edge_ssim: float | None = None
     max_diff: float | None = None
     size_mismatch: bool = False
+    flagged: bool = False
     features: list[str] = field(default_factory=list)
     exception_type: str = ""
     traceback: str = ""
@@ -54,6 +60,7 @@ class TestResult:
     ref_png: Path | None = None
     rendered_png: Path | None = None
     diff_png: Path | None = None
+    composite_png: Path | None = None
     latex_log: Path | None = None
 
 
@@ -64,9 +71,10 @@ def run_test(
     config: Config,
 ) -> TestResult:
     """
-    Run one complete pipeline stage for a single generated script.
+    Run one complete pipeline for a single generated script.
 
     Returns a TestResult regardless of which stage failed.
+    COMPLETE = all stages succeeded and image metrics are populated.
     """
     result = TestResult(test_id=test_id, status=TestStatus.GENERATION_ERROR)
     result.features = script.features
@@ -95,7 +103,7 @@ def run_test(
         result.traceback = "Script ran but reference.png was not created."
         return result
 
-    # --- Stage 3: Transpile → figure.tikz ----------------------------------
+    # --- Stage 3: Transpile â†’ figure.tikz ----------------------------------
     tikz_path = test_dir / "figure.tikz"
     result.tikz_path = tikz_path
 
@@ -123,7 +131,7 @@ def run_test(
     result.wrapper_path = wrapper_path
     result.latex_log = test_dir / "latex.log"
 
-    # --- Stage 5: Compile LaTeX → PDF ---------------------------------------
+    # --- Stage 5: Compile LaTeX â†’ PDF ---------------------------------------
     pdf_path = test_dir / "wrapper.pdf"
 
     ok, log = compile_latex(
@@ -143,7 +151,7 @@ def run_test(
         result.traceback = "pdflatex exited 0 but wrapper.pdf was not created."
         return result
 
-    # --- Stage 6: Rasterize PDF → tikz_rendered.png -------------------------
+    # --- Stage 6: Rasterize PDF â†’ tikz_rendered.png -------------------------
     rendered_png = test_dir / "tikz_rendered.png"
     result.rendered_png = rendered_png
 
@@ -162,15 +170,16 @@ def run_test(
 
     # --- Stage 7: Compare images --------------------------------------------
     diff_png = test_dir / "diff.png"
+    composite_png = test_dir / "composite.png"
     result.diff_png = diff_png
+    result.composite_png = composite_png
 
     try:
         cmp: CompareResult = compare_images(
             ref_path=ref_png,
             rendered_path=rendered_png,
             diff_path=diff_png,
-            threshold_rms=config.threshold_rms,
-            threshold_ssim=config.threshold_ssim,
+            composite_path=composite_png,
         )
     except Exception as exc:
         result.status = TestStatus.RENDER_ERROR
@@ -180,13 +189,17 @@ def run_test(
 
     result.rms = cmp.rms
     result.ssim = cmp.ssim
+    result.edge_ssim = cmp.edge_ssim
     result.max_diff = cmp.max_diff
     result.size_mismatch = cmp.size_mismatch
+    result.status = TestStatus.COMPLETE
 
-    if cmp.passed:
-        result.status = TestStatus.PASS
-    else:
-        result.status = TestStatus.VISUAL_MISMATCH
+    # Annotate as flagged if any metric exceeds the configured thresholds
+    result.flagged = (
+        (config.flag_rms is not None and cmp.rms > config.flag_rms)
+        or (config.flag_ssim is not None and cmp.ssim < config.flag_ssim)
+        or (config.flag_edge_ssim is not None and cmp.edge_ssim < config.flag_edge_ssim)
+    )
 
     return result
 
@@ -221,3 +234,4 @@ def _run_script(
         return False, error
 
     return True, ""
+

@@ -154,12 +154,12 @@ Options:
   --n INTEGER              Number of test cases          [default: 10]
   --out TEXT               Output directory              [default: runs/output]
   --failures-dir TEXT      Failures directory            [default: failures]
-  --model TEXT             LLM model name                [default: claude-opus-4-5]
+  --model TEXT             LLM model name                [default: claude-haiku-4-5-20251001]
   --provider [anthropic|openai]  LLM provider           [default: anthropic]
-  --threshold-rms FLOAT    RMS failure threshold         [default: 8.0]
-  --threshold-ssim FLOAT   SSIM failure threshold        [default: 0.985]
+  --flag-rms FLOAT         Flag tests with trimmed-image RMS above this  [default: 20.0]
+  --flag-ssim FLOAT        Flag tests with trimmed-image SSIM below this [default: 0.85]
+  --flag-edge-ssim FLOAT   Flag tests with edge-structure SSIM below this[default: 0.50]
   --timeout INTEGER        Seconds per pipeline stage    [default: 30]
-  --keep-passing           Store passing test artifacts
   --transpiler [makintikz|tikzplotlib]  Transpiler       [default: makintikz]
   --seed INTEGER           Base random seed
   --no-llm                 Use 5 built-in examples
@@ -178,16 +178,20 @@ runs/demo/
     wrapper.tex          ← standalone LaTeX document
     wrapper.pdf          ← compiled PDF
     tikz_rendered.png    ← rasterized TikZ render
-    diff.png             ← amplified pixel difference
+    diff.png             ← amplified pixel difference (×4 brightness)
+    composite.png        ← side-by-side: Reference | TikZ | Diff
     latex.log            ← pdflatex output
-    metadata.json        ← metrics (optional, if --keep-passing)
+    metadata.json        ← metrics + flagged annotation
+  summary.json           ← all results in one file
+  summary.csv            ← same, spreadsheet-friendly
 
-failures/
+failures/               ← pipeline errors only (script crash, LaTeX failure, etc.)
   failure_0001/
     plot_script.py
     reference.png
     tikz_rendered.png
     diff.png
+    composite.png
     figure.tikz
     wrapper.tex
     latex.log
@@ -201,7 +205,7 @@ failures/
 
 | Status | Meaning |
 |--------|---------|
-| `visual_mismatch` | Both renders succeeded but RMS/SSIM exceeded threshold |
+| `complete` | All 7 stages succeeded; metrics recorded; `flagged=true` if any metric crosses a threshold |
 | `script_error` | Generated Python script crashed or didn't save `reference.png` |
 | `transpile_error` | `get_tikz_code()` or `tikzplotlib.save()` raised an exception |
 | `latex_error` | `pdflatex` failed to compile `wrapper.tex` |
