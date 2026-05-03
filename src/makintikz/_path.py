@@ -259,6 +259,29 @@ def _check_x_is_date(data: TikzData) -> bool:
     return isinstance(converter, DateConverter)
 
 
+_D2 = 2
+_ZERO2 = np.array([0.0, 0.0], dtype=float)
+
+
+# FIX #594: len(dd)==1 is true for
+# 1-point scatter too.
+# Only treat as contour if the
+# single offset is a dummy near (0,0).
+def _is_contour_like_offsets(dd: object) -> bool:
+    """Contours often show up as a PathCollection with a single dummy offset near (0, 0)."""
+    if not isinstance(dd, Sized) or len(dd) != 1:
+        return False
+    try:
+        offsets = np.asarray(dd, dtype=float)
+    except (TypeError, ValueError):
+        return False
+
+    if offsets.ndim != _D2 or offsets.shape[1] < _D2:
+        return False
+
+    return np.allclose(offsets[0, :_D2], _ZERO2, atol=1e-12, rtol=0.0)
+
+
 def draw_pathcollection(data: TikzData, obj: PathCollection) -> list[str]:
     """Returns PGFPlots code for a number of patch objects."""
     content = []
@@ -268,6 +291,7 @@ def draw_pathcollection(data: TikzData, obj: PathCollection) -> list[str]:
         # No idea what to draw.
         return []
 
+    is_contour = _is_contour_like_offsets(dd)
     path_collection_data = PathCollectionData(
         obj=obj,
         dd_strings=np.array(
@@ -280,7 +304,7 @@ def draw_pathcollection(data: TikzData, obj: PathCollection) -> list[str]:
         draw_options=["only marks"],
         labels=["x", "y"],
         table_options=[],
-        is_contour=isinstance(dd, Sized) and len(dd) == 1,
+        is_contour=is_contour,  # use the correct is_contour
     )
     line_data = LineData(obj=obj)
 
@@ -299,10 +323,15 @@ def draw_pathcollection(data: TikzData, obj: PathCollection) -> list[str]:
 
     _draw_pathcollection_drawoptions(data, path_collection_data, line_data)
 
-    for path in obj.get_paths():
-        _draw_pathcollection_draw_contour(path, data, path_collection_data)
-        _draw_pathcollection_scatter_sizes(data, path_collection_data)
+    # For contours, iterate the actual contour paths and let the contour helper
+    # replace the point table. For scatter markers, emit exactly one plot using
+    # offsets and avoid treating marker geometry as contour paths.
+    paths = obj.get_paths() if path_collection_data.is_contour else [None]
 
+    for path in paths:
+        if path is not None:
+            _draw_pathcollection_draw_contour(path, data, path_collection_data)
+        _draw_pathcollection_scatter_sizes(data, path_collection_data)
         # remove duplicates
         draw_options = sorted(set(path_collection_data.draw_options))
 
@@ -322,9 +351,12 @@ def draw_pathcollection(data: TikzData, obj: PathCollection) -> list[str]:
         else:
             content.append("table{")
 
-        plot_table = []
-        plot_table.append("  ".join(path_collection_data.labels) + "\n")
-        plot_table.extend(" ".join(row) + "\n" for row in path_collection_data.dd_strings)
+        # linter fix, reducing statements
+
+        plot_table = [
+            "  ".join(path_collection_data.labels) + "\n",
+            *(" ".join(row) + "\n" for row in path_collection_data.dd_strings),
+        ]
 
         if data.externalize_tables:
             filepath, rel_filepath = _files.new_filepath(data, "table", ".dat")

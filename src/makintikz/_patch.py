@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Generator, Iterable
 from itertools import cycle, islice, tee
 from typing import TYPE_CHECKING
+
+import numpy as np
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterable
 
 from matplotlib.axes import Axes
 from matplotlib.patches import Circle, Ellipse, FancyArrowPatch, Patch, Rectangle
@@ -24,7 +28,7 @@ def draw_patch(data: TikzData, obj: Patch) -> list[str]:
         draw_options = mypath.get_draw_options(
             data,
             mypath.LineData(
-                obj=obj,
+                    obj=obj,
                 ec=obj.get_edgecolor(),
                 fc=None,  # get_fillcolor for the arrow refers to the head, not the path
                 ls=obj.get_linestyle(),
@@ -112,7 +116,16 @@ def draw_patchcollection(data: TikzData, obj: Collection) -> list[str]:
     lws = ensure_list(obj.get_linewidth())
     ts = ensure_list(obj.get_transforms())
     offs_tmp = obj.get_offsets()
-    offs = offs_tmp if isinstance(offs_tmp, Iterable) else [offs_tmp]
+
+    offsets = np.asarray(offs_tmp)
+
+    if offsets.ndim == 1:
+        offsets = offsets.reshape(1, 2)
+
+    if offsets.size == 0 or offsets.shape[0] == 0:
+        return []  # nothing to draw
+
+    offs = offsets.tolist()
     hatches = ensure_list(obj.get_hatch()) if obj.get_hatch() is not None else [None]
 
     paths = obj.get_paths()

@@ -4,9 +4,12 @@ import numpy as np
 from matplotlib.backends import backend_agg
 from matplotlib.figure import Figure
 from matplotlib.legend import Legend
+from matplotlib.patches import Patch
 
 from . import _color as mycol
+from . import _path as mypath
 from ._tikzdata import TikzData
+from ._util import _common_texification
 
 
 def draw_legend(data: TikzData, obj: Legend) -> None:
@@ -17,15 +20,7 @@ def draw_legend(data: TikzData, obj: Legend) -> None:
         texts.append(f"{text.get_text()}")
         children_alignment.append(f"{text.get_horizontalalignment()}")
 
-    legend_style = [
-        # https://github.com/matplotlib/matplotlib/issues/15764#issuecomment-557823370
-        f"fill opacity={obj.get_frame().get_alpha()}",
-        "draw opacity=1",
-        "text opacity=1",
-    ]
-    _legend_position_anchor(data, obj, legend_style)
-    _legend_edgecolor(data, obj, legend_style)
-    _legend_facecolor(data, obj, legend_style)
+    legend_style = build_legend_style(data, obj)
 
     # Get the horizontal alignment
     try:
@@ -52,6 +47,7 @@ def draw_legend(data: TikzData, obj: Legend) -> None:
     if ncols != 1:
         data.current_axis_options.add(f"legend columns={ncols}")
 
+
     # Write styles to data
     if legend_style:
         max_length = 80
@@ -63,6 +59,26 @@ def draw_legend(data: TikzData, obj: Legend) -> None:
         string = j1.join(legend_style)
         style = f"legend style={{{j0}{string}{j2}}}"
         data.current_axis_options.add(style)
+
+
+def build_legend_style(data: TikzData, obj: Legend) -> list[str]:
+    legend_style = [
+        "draw opacity=1",
+        "text opacity=1",
+    ]
+
+    frame_on = obj.get_frame_on()
+    if frame_on:
+        alpha = obj.get_frame().get_alpha()
+        if alpha is not None:
+            legend_style.insert(0, f"fill opacity={alpha}")
+    else:
+        legend_style.append("fill opacity=0, fill=none")
+
+    _legend_position_anchor(data, obj, legend_style)
+    _legend_edgecolor(data, obj, legend_style)
+    _legend_facecolor(data, obj, legend_style)
+    return legend_style
 
 
 def _legend_position_anchor(data: TikzData, obj: Legend, legend_style: list[str]) -> None:
