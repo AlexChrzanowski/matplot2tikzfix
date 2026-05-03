@@ -18,8 +18,8 @@ dependencies = [
   "typing_extensions >= 4.5",
 ]
 authors = [
-    {name="Erwin de Gelder", email="erwindegelder@gmail.com"},
     {name="Alex Chrzanowski", email="chrzanow@purdue.edu"},
+    {name="Erwin de Gelder", email="erwindegelder@gmail.com"},
     {name="Nico Schlömer", email="nico.schloemer@gmail.com"},
 ]
 classifiers=[
